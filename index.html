@@ -1,0 +1,315 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>연말정산 준비 도우미</title>
+<style>
+:root{
+  --bg:#F3F6FB; --card:#FFFFFF; --text:#183153; --primary:#2563EB;
+  --muted:#5B6F8D; --line:#E1E8F2; --b1:#1E40AF; --b2:#2563EB; --b3:#60A5FA; --b4:#BFDBFE;
+  --danger:#C0392B;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:"Malgun Gothic","Apple SD Gothic Neo",system-ui,sans-serif;font-size:15px;line-height:1.5}
+.app{display:flex;min-height:100vh}
+.sidebar{width:230px;background:var(--card);border-right:1px solid var(--line);padding:20px 12px;position:sticky;top:0;height:100vh;flex-shrink:0}
+.brand{font-weight:700;font-size:17px;padding:4px 12px 18px}
+.brand small{display:block;font-weight:400;color:var(--muted);font-size:12px}
+.nav button{display:flex;align-items:center;justify-content:space-between;width:100%;text-align:left;background:none;border:0;color:var(--text);padding:10px 12px;border-radius:8px;font:inherit;cursor:pointer;margin-bottom:2px}
+.nav button:hover{background:var(--bg)}
+.nav button.active{background:var(--primary);color:#fff}
+.badge{background:var(--b4);color:var(--b1);border-radius:10px;font-size:12px;padding:0 8px;min-width:22px;text-align:center}
+.nav button.active .badge{background:#fff;color:var(--primary)}
+main{flex:1;padding:28px 32px;max-width:1100px}
+h1{font-size:22px;margin:0 0 4px}
+.sub{color:var(--muted);margin:0 0 20px}
+.card{background:var(--card);border-radius:12px;padding:20px;box-shadow:0 1px 3px rgba(24,49,83,.08);margin-bottom:16px}
+.card h2{font-size:16px;margin:0 0 14px}
+.grid{display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));margin-bottom:16px}
+.grid .card{margin:0}
+.stat .label{color:var(--muted);font-size:13px}
+.stat .value{font-size:26px;font-weight:700;margin-top:2px}
+.progress{height:14px;background:var(--b4);border-radius:8px;overflow:hidden;margin-top:10px}
+.progress>div{height:100%;background:var(--primary);transition:width .3s}
+.bars .row{display:grid;grid-template-columns:110px 1fr 120px;gap:10px;align-items:center;margin-bottom:10px;font-size:14px}
+.bars .track{background:var(--bg);border-radius:6px;height:18px;overflow:hidden}
+.bars .fill{height:100%;border-radius:6px;transition:width .3s}
+.bars .amt{text-align:right}
+.stack{display:flex;height:22px;border-radius:6px;overflow:hidden;background:var(--bg)}
+.legend{display:flex;gap:16px;flex-wrap:wrap;margin-top:10px;font-size:13px;color:var(--muted)}
+.dot{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px}
+.empty{color:var(--muted);text-align:center;padding:28px 0}
+form.inline{display:grid;gap:10px;grid-template-columns:1.2fr 1.6fr 1.2fr auto;align-items:end}
+label{display:block;font-size:13px;color:var(--muted);margin-bottom:4px}
+input,select{width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:8px;font:inherit;color:var(--text);background:#fff}
+input:focus,select:focus{outline:2px solid var(--b4);border-color:var(--primary)}
+.btn{background:var(--primary);color:#fff;border:0;border-radius:8px;padding:9px 16px;font:inherit;cursor:pointer;white-space:nowrap}
+.btn:hover{background:var(--b1)}
+.btn.ghost{background:#fff;color:var(--primary);border:1px solid var(--primary)}
+.btn.ghost:hover{background:var(--bg)}
+.btn.danger{background:#fff;color:var(--danger);border:1px solid var(--danger)}
+.btn.sm{padding:5px 10px;font-size:13px}
+table{width:100%;border-collapse:collapse}
+th,td{text-align:left;padding:10px 8px;border-bottom:1px solid var(--line);vertical-align:middle}
+th{font-size:13px;color:var(--muted);font-weight:600}
+td.num,th.num{text-align:right}
+td.act{white-space:nowrap;text-align:right}
+.tablewrap{overflow-x:auto}
+.pill{display:inline-block;padding:2px 10px;border-radius:12px;font-size:12px}
+.s-done{background:var(--b1);color:#fff}.s-prog{background:var(--b3);color:#fff}.s-none{background:var(--b4);color:var(--b1)}
+.check{display:flex;align-items:center;gap:12px;padding:12px 4px;border-bottom:1px solid var(--line)}
+.check input{width:20px;height:20px;flex-shrink:0}
+.check .meta{flex:1}.check .meta small{color:var(--muted)}
+.toolbar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+.toolbar select{width:auto}
+.tags{display:flex;flex-wrap:wrap;gap:8px}
+.tag{display:flex;align-items:center;gap:8px;background:var(--bg);border-radius:8px;padding:6px 10px}
+.tag button{border:0;background:none;color:var(--danger);cursor:pointer;font-size:16px;line-height:1}
+.note{font-size:13px;color:var(--muted)}
+.err{color:var(--danger);font-size:13px;margin-top:6px;min-height:18px}
+@media(max-width:800px){
+  .app{flex-direction:column}
+  .sidebar{width:100%;height:auto;position:static;border-right:0;border-bottom:1px solid var(--line);padding:12px}
+  .brand{padding-bottom:8px}
+  .nav{display:flex;gap:4px;overflow-x:auto}
+  .nav button{white-space:nowrap;width:auto;gap:8px}
+  main{padding:20px 16px}
+  form.inline{grid-template-columns:1fr}
+  .bars .row{grid-template-columns:80px 1fr 90px}
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand">연말정산 준비 도우미<small>금액 · 증빙 준비 관리</small></div>
+    <nav class="nav" id="nav"></nav>
+  </aside>
+  <main id="view"></main>
+</div>
+
+<script>
+(function(){
+  var KEY='yeonmal-helper-v1';
+  var DEFAULT_CATS=['의료비','교육비','기부금','신용카드','현금영수증','주택자금','보험료'];
+  var STATUS=[{k:'none',t:'미준비',c:'s-none',col:'#BFDBFE'},{k:'prog',t:'준비 중',c:'s-prog',col:'#60A5FA'},{k:'done',t:'완료',c:'s-done',col:'#1E40AF'}];
+  var SHADES=['#1E40AF','#2563EB','#3B82F6','#60A5FA','#93C5FD','#BFDBFE'];
+  var MENUS=[{id:'dash',t:'대시보드'},{id:'input',t:'공제 항목 입력'},{id:'proof',t:'증빙 관리'},{id:'todo',t:'미비 증빙 체크리스트'},{id:'set',t:'설정'}];
+
+  var state={cats:DEFAULT_CATS.slice(),items:[],menu:'dash',editId:null,filter:'all',err:''};
+  var nextId=1;
+
+  function load(){
+    try{
+      var d=JSON.parse(localStorage.getItem(KEY)||'null');
+      if(d&&Array.isArray(d.cats)&&Array.isArray(d.items)){state.cats=d.cats;state.items=d.items;}
+    }catch(e){}
+    state.items.forEach(function(i){if(i.id>=nextId)nextId=i.id+1;});
+  }
+  function save(){try{localStorage.setItem(KEY,JSON.stringify({cats:state.cats,items:state.items}));}catch(e){}}
+  function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c];});}
+  function won(n){return Number(n).toLocaleString('ko-KR')+'원';}
+  function st(k){return STATUS.filter(function(s){return s.k===k;})[0]||STATUS[0];}
+  function pill(k){var s=st(k);return '<span class="pill '+s.c+'">'+s.t+'</span>';}
+  function statusSelect(id,cur){
+    return '<select data-act="status" data-id="'+id+'" style="width:auto">'+STATUS.map(function(s){return '<option value="'+s.k+'"'+(s.k===cur?' selected':'')+'>'+s.t+'</option>';}).join('')+'</select>';
+  }
+  function catOptions(sel){
+    return state.cats.map(function(c){return '<option'+(c===sel?' selected':'')+'>'+esc(c)+'</option>';}).join('');
+  }
+  function stats(){
+    var total=0,cnt={none:0,prog:0,done:0},doneAmt=0;
+    state.items.forEach(function(i){total+=i.amount;cnt[i.status]++;if(i.status==='done')doneAmt+=i.amount;});
+    var n=state.items.length;
+    return {total:total,n:n,cnt:cnt,doneAmt:doneAmt,rate:n?Math.round(cnt.done/n*100):0};
+  }
+
+  /* ---------- views ---------- */
+  function vDash(){
+    var s=stats();
+    if(!s.n) return head('대시보드','입력한 금액 합계와 증빙 준비율을 한눈에 확인합니다.')+
+      '<div class="card empty">아직 입력된 항목이 없습니다.<br><br><button class="btn" data-act="go" data-menu="input">공제 항목 입력하러 가기</button></div>';
+    var byCat={};
+    state.items.forEach(function(i){byCat[i.cat]=(byCat[i.cat]||0)+i.amount;});
+    var rows=Object.keys(byCat).map(function(k){return {k:k,v:byCat[k]};}).sort(function(a,b){return b.v-a.v;});
+    var max=rows[0].v||1;
+    var bars=rows.map(function(r,idx){
+      return '<div class="row"><div>'+esc(r.k)+'</div><div class="track"><div class="fill" style="width:'+Math.max(2,r.v/max*100)+'%;background:'+SHADES[Math.min(idx,SHADES.length-1)]+'"></div></div><div class="amt">'+won(r.v)+'</div></div>';
+    }).join('');
+    var stack=STATUS.slice().reverse().map(function(x){
+      return s.cnt[x.k]?'<div style="width:'+s.cnt[x.k]/s.n*100+'%;background:'+x.col+'" title="'+x.t+' '+s.cnt[x.k]+'건"></div>':'';
+    }).join('');
+    var legend=STATUS.slice().reverse().map(function(x){return '<span><i class="dot" style="background:'+x.col+'"></i>'+x.t+' '+s.cnt[x.k]+'건</span>';}).join('');
+    return head('대시보드','입력한 금액 합계와 증빙 준비율을 한눈에 확인합니다.')+
+    '<div class="grid">'+
+      '<div class="card stat"><div class="label">입력 금액 합계</div><div class="value">'+won(s.total)+'</div></div>'+
+      '<div class="card stat"><div class="label">입력 항목 수</div><div class="value">'+s.n+'건</div></div>'+
+      '<div class="card stat"><div class="label">증빙 준비율</div><div class="value">'+s.rate+'%</div><div class="progress"><div style="width:'+s.rate+'%"></div></div></div>'+
+      '<div class="card stat"><div class="label">증빙 완료 금액</div><div class="value">'+won(s.doneAmt)+'</div></div>'+
+    '</div>'+
+    '<div class="card bars"><h2>항목별 입력 금액</h2>'+bars+'</div>'+
+    '<div class="card"><h2>증빙 준비 현황 ('+s.cnt.done+' / '+s.n+'건 완료)</h2><div class="stack">'+stack+'</div><div class="legend">'+legend+'</div></div>'+
+    '<p class="note">※ 준비율은 전체 입력 항목 중 증빙이 "완료"인 건수의 비율입니다. 세금·환급액은 계산하지 않습니다.</p>';
+  }
+
+  function head(t,d){return '<h1>'+t+'</h1><p class="sub">'+d+'</p>';}
+
+  function vInput(){
+    var edit=state.items.filter(function(i){return i.id===state.editId;})[0];
+    var v=edit||{cat:state.cats[0],name:'',amount:''};
+    var form=state.cats.length?
+      '<form class="inline" id="itemForm">'+
+        '<div><label>공제 항목</label><select name="cat">'+catOptions(v.cat)+'</select></div>'+
+        '<div><label>내용 (예: ○○병원 진료비)</label><input name="name" maxlength="60" value="'+esc(v.name)+'" required></div>'+
+        '<div><label>금액 (원)</label><input name="amount" type="number" min="0" step="1" inputmode="numeric" value="'+esc(v.amount)+'" required></div>'+
+        '<div style="display:flex;gap:6px"><button class="btn" type="submit">'+(edit?'수정 저장':'추가')+'</button>'+(edit?'<button class="btn ghost" type="button" data-act="cancel">취소</button>':'')+'</div>'+
+      '</form><div class="err">'+esc(state.err)+'</div>':
+      '<div class="empty">공제 항목이 없습니다. 설정에서 먼저 항목을 추가하세요.</div>';
+    var s=stats();
+    var tbl=state.items.length?
+      '<div class="tablewrap"><table><thead><tr><th>공제 항목</th><th>내용</th><th class="num">금액</th><th>증빙</th><th></th></tr></thead><tbody>'+
+      state.items.map(function(i){
+        return '<tr><td>'+esc(i.cat)+'</td><td>'+esc(i.name)+'</td><td class="num">'+won(i.amount)+'</td><td>'+pill(i.status)+'</td>'+
+        '<td class="act"><button class="btn ghost sm" data-act="edit" data-id="'+i.id+'">수정</button> <button class="btn danger sm" data-act="del" data-id="'+i.id+'">삭제</button></td></tr>';
+      }).join('')+
+      '</tbody><tfoot><tr><th colspan="2">합계 ('+s.n+'건)</th><th class="num">'+won(s.total)+'</th><th colspan="2"></th></tr></tfoot></table></div>':
+      '<div class="empty">아직 입력된 항목이 없습니다.</div>';
+    return head('공제 항목 입력','항목별 금액을 입력하고 수정·삭제합니다. 변경 즉시 집계에 반영됩니다.')+
+      '<div class="card"><h2>'+(edit?'항목 수정':'새 항목 추가')+'</h2>'+form+'</div><div class="card"><h2>입력 내역</h2>'+tbl+'</div>';
+  }
+
+  function vProof(){
+    var s=stats();
+    var list=state.items.filter(function(i){return state.filter==='all'||i.status===state.filter;});
+    var tbl=list.length?
+      '<div class="tablewrap"><table><thead><tr><th>공제 항목</th><th>내용</th><th class="num">금액</th><th>준비 상태</th><th>메모</th></tr></thead><tbody>'+
+      list.map(function(i){
+        return '<tr><td>'+esc(i.cat)+'</td><td>'+esc(i.name)+'</td><td class="num">'+won(i.amount)+'</td><td>'+statusSelect(i.id,i.status)+'</td>'+
+        '<td><input data-act="memo" data-id="'+i.id+'" value="'+esc(i.memo||'')+'" placeholder="예: 홈택스에서 발급 필요" maxlength="100"></td></tr>';
+      }).join('')+'</tbody></table></div>':
+      '<div class="empty">'+(state.items.length?'해당 상태의 항목이 없습니다.':'입력된 항목이 없습니다. 먼저 공제 항목을 입력하세요.')+'</div>';
+    var fopts='<option value="all">전체 ('+s.n+')</option>'+STATUS.map(function(x){return '<option value="'+x.k+'"'+(state.filter===x.k?' selected':'')+'>'+x.t+' ('+s.cnt[x.k]+')</option>';}).join('');
+    return head('증빙 관리','항목마다 증빙 준비 상태를 바꾸고 메모를 남깁니다.')+
+      '<div class="card"><div class="toolbar"><select data-act="filter">'+fopts+'</select><span class="note" style="align-self:center">준비율 '+s.rate+'%</span></div>'+tbl+'</div>';
+  }
+
+  function vTodo(){
+    var list=state.items.filter(function(i){return i.status!=='done';});
+    var body=list.length?list.map(function(i){
+      return '<div class="check"><input type="checkbox" data-act="complete" data-id="'+i.id+'" aria-label="완료 처리">'+
+      '<div class="meta"><b>'+esc(i.name)+'</b> '+pill(i.status)+'<br><small>'+esc(i.cat)+' · '+won(i.amount)+(i.memo?' · '+esc(i.memo):'')+'</small></div></div>';
+    }).join(''):
+    '<div class="empty">'+(state.items.length?'🎉 모든 증빙이 준비되었습니다.':'입력된 항목이 없습니다.')+'</div>';
+    return head('미비 증빙 체크리스트','아직 완료되지 않은 증빙만 모아 보여줍니다. 체크하면 "완료"로 바뀝니다.')+
+      '<div class="card"><h2>남은 증빙 '+list.length+'건</h2>'+body+'</div>';
+  }
+
+  function vSet(){
+    var tags=state.cats.length?state.cats.map(function(c){
+      var n=state.items.filter(function(i){return i.cat===c;}).length;
+      return '<span class="tag">'+esc(c)+(n?' <small class="note">('+n+'건)</small>':'')+'<button title="삭제" data-act="delcat" data-cat="'+esc(c)+'">×</button></span>';
+    }).join(''):'<span class="note">등록된 공제 항목이 없습니다.</span>';
+    return head('설정','공제 항목을 관리하고 입력 데이터를 초기화합니다.')+
+    '<div class="card"><h2>공제 항목 관리</h2><div class="tags" style="margin-bottom:14px">'+tags+'</div>'+
+      '<form id="catForm" style="display:flex;gap:8px;max-width:420px"><input name="cat" placeholder="새 항목 이름" maxlength="20" required><button class="btn" type="submit">추가</button></form><div class="err">'+esc(state.err)+'</div></div>'+
+    '<div class="card"><h2>데이터</h2><p class="note">데이터는 이 브라우저에만 저장되며 외부로 전송되지 않습니다.</p>'+
+      '<button class="btn ghost" data-act="sample">예시 데이터 불러오기</button> '+
+      '<button class="btn danger" data-act="reset">모든 입력 데이터 삭제</button></div>';
+  }
+
+  /* ---------- render ---------- */
+  function render(){
+    var s=stats(), left=state.items.filter(function(i){return i.status!=='done';}).length;
+    document.getElementById('nav').innerHTML=MENUS.map(function(m){
+      var b=m.id==='todo'&&left?'<span class="badge">'+left+'</span>':'';
+      return '<button data-act="go" data-menu="'+m.id+'" class="'+(state.menu===m.id?'active':'')+'">'+m.t+b+'</button>';
+    }).join('');
+    var v={dash:vDash,input:vInput,proof:vProof,todo:vTodo,set:vSet}[state.menu]();
+    document.getElementById('view').innerHTML=v;
+  }
+  function go(m){state.menu=m;state.editId=null;state.err='';render();window.scrollTo(0,0);}
+
+  /* ---------- events ---------- */
+  document.addEventListener('click',function(e){
+    var t=e.target.closest('[data-act]'); if(!t) return;
+    var a=t.dataset.act, id=Number(t.dataset.id);
+    if(a==='go') go(t.dataset.menu);
+    else if(a==='edit'){state.editId=id;state.err='';render();window.scrollTo(0,0);}
+    else if(a==='cancel'){state.editId=null;state.err='';render();}
+    else if(a==='del'){
+      var it=state.items.filter(function(i){return i.id===id;})[0];
+      if(it&&confirm('"'+it.name+'" 항목을 삭제할까요?')){state.items=state.items.filter(function(i){return i.id!==id;});if(state.editId===id)state.editId=null;save();render();}
+    }
+    else if(a==='delcat'){
+      var c=t.dataset.cat, n=state.items.filter(function(i){return i.cat===c;}).length;
+      if(confirm('"'+c+'" 항목을 삭제할까요?'+(n?'\n이 항목에 입력된 '+n+'건도 함께 삭제됩니다.':''))){
+        state.cats=state.cats.filter(function(x){return x!==c;});
+        state.items=state.items.filter(function(i){return i.cat!==c;});
+        save();render();
+      }
+    }
+    else if(a==='sample'){
+      if(state.items.length&&!confirm('예시 데이터가 기존 내역 뒤에 추가됩니다. 계속할까요?')) return;
+      [['의료비','OO병원 진료비',320000,'done'],['의료비','약국 처방전',58000,'prog'],['교육비','학원비 납입 확인서',1200000,'none'],
+       ['기부금','OO단체 기부금 영수증',200000,'done'],['신용카드','1~12월 카드 사용 내역',8450000,'prog'],['보험료','보장성 보험 납입 증명',960000,'none']]
+      .forEach(function(r){
+        if(state.cats.indexOf(r[0])<0) state.cats.push(r[0]);
+        state.items.push({id:nextId++,cat:r[0],name:r[1],amount:r[2],status:r[3],memo:''});
+      });
+      save();render();
+    }
+    else if(a==='reset'){
+      if(confirm('입력한 모든 항목을 삭제할까요? 되돌릴 수 없습니다.\n(공제 항목 목록은 유지됩니다.)')){state.items=[];state.editId=null;save();render();}
+    }
+  });
+
+  document.addEventListener('change',function(e){
+    var t=e.target, a=t.dataset.act, id=Number(t.dataset.id);
+    if(a==='status'){
+      var it=state.items.filter(function(i){return i.id===id;})[0];
+      if(it){it.status=t.value;save();render();}
+    } else if(a==='filter'){state.filter=t.value;render();}
+    else if(a==='complete'&&t.checked){
+      var x=state.items.filter(function(i){return i.id===id;})[0];
+      if(x){x.status='done';save();render();}
+    }
+  });
+
+  document.addEventListener('input',function(e){
+    var t=e.target;
+    if(t.dataset.act==='memo'){
+      var it=state.items.filter(function(i){return i.id===Number(t.dataset.id);})[0];
+      if(it){it.memo=t.value;save();}
+    }
+  });
+
+  document.addEventListener('submit',function(e){
+    e.preventDefault();
+    var f=e.target, d=new FormData(f);
+    if(f.id==='itemForm'){
+      var name=String(d.get('name')).trim(), amt=Number(d.get('amount'));
+      if(!name){state.err='내용을 입력하세요.';render();return;}
+      if(!isFinite(amt)||amt<0||!Number.isInteger(amt)){state.err='금액은 0 이상의 정수로 입력하세요.';render();return;}
+      if(state.editId){
+        var it=state.items.filter(function(i){return i.id===state.editId;})[0];
+        if(it){it.cat=d.get('cat');it.name=name;it.amount=amt;}
+        state.editId=null;
+      } else {
+        state.items.push({id:nextId++,cat:d.get('cat'),name:name,amount:amt,status:'none',memo:''});
+      }
+      state.err='';save();render();
+      var first=document.querySelector('#itemForm [name=name]'); if(first) first.focus();
+    } else if(f.id==='catForm'){
+      var c=String(d.get('cat')).trim();
+      if(!c){return;}
+      if(state.cats.indexOf(c)>=0){state.err='이미 있는 항목입니다.';render();return;}
+      state.cats.push(c);state.err='';save();render();
+    }
+  });
+
+  load();render();
+})();
+</script>
+</body>
+</html>
